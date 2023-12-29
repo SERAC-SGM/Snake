@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpException, HttpStatus, Logger } from '@nestjs/common';
 
 @Controller('snake')
 export class SnakeController {
+	private logger = new Logger(SnakeController.name);
 
 	private gameState = {
 		snakePosition: [[0, 0], [0, 1], [0, 2]],	// Initial snake position
@@ -11,35 +12,40 @@ export class SnakeController {
 	@Get('state')
 	getGameState()
 	{
-		return this.gameState;
+		try {
+			return this.gameState;
+		} catch (error) {
+			this.logger.error( `Error getting game data state: $(error.message)` );
+			throw new HttpException('Error getting game data state', HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@Post('update')
 	updateGameState(@Body() updateData: any)
 	{
-		// assume that updateDate contains a direction property
-		const newDirection = updateData.direction;
+		try {
+			const newDirection = updateData.direction;
 
-		//update the snake position based on the new direction
-		const newHead =this.calculateNewHead(newDirection);
-		this.gameState.snakePosition.unshift(newHead);
+			// update the snake position based on the new direction
+			const newHead =this.calculateNewHead(newDirection);
+			this.gameState.snakePosition.unshift(newHead);
 
-		// check for collision
-		if (this.checkCollision()) {
-			// handle collision logic
-			this.gameState = this.resetGameState();
-		} else {
-			// check if food is eaten
-			if (this.isFoodEaten()) {
-				// generate new food position
-				this.gameState.foodPosition = this.generateNewFoodPosition();
+			if (this.checkCollision()) {
+				this.gameState = this.resetGameState();
 			} else {
-				// remove the last element from the snake position
-				this.gameState.snakePosition.pop();
+				if (this.isFoodEaten()) {
+					this.gameState.foodPosition = this.generateNewFoodPosition();
+				} else {
+					// remove the last element from the snake position
+					this.gameState.snakePosition.pop();
+				}
 			}
+			
+			return this.gameState;
+		} catch (error) {
+			this.logger.error( `Error updating game data state: $(error.message)` );
+			throw new HttpException('Error updating game data state', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
-		return this.gameState;
 	}
 
 	private calculateNewHead(direction: string) {
@@ -77,5 +83,25 @@ export class SnakeController {
 		const [headX, headY] = this.gameState.snakePosition[0];
 		// Check if the head collides with the body
 		return this.gameState.snakePosition.slice(1).some(([posX, posY]) => posX === headX && posY === headY); //explain this
+	}
+
+	private isFoodEaten() {
+		const [headX, headY] = this.gameState.snakePosition[0];
+		const [foodX, foodY] = this.gameState.foodPosition;
+		return headX == foodX && headY == foodY;
+	}
+	
+	private generateNewFoodPosition(): number[] {
+		// Generate a random position for the food
+		const newFoodX = Math.floor(Math.random() * 10);
+		const newFoodY = Math.floor(Math.random() * 10);
+		return [newFoodX, newFoodY];
+	}
+
+	private resetGameState() {
+		return {
+			snakePosition: [[0, 0], [0, 1], [0, 2]],
+			foodPosition: [2, 2]
+		};
 	}
 }
