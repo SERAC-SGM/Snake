@@ -36,3 +36,29 @@
     transform: rotate(360deg);
   }
 }
+
+.grid{
+	border: 2px solid black;
+}
+
+.grid-row{
+	display: flex;
+}
+
+.grid-cell{
+	box-sizing: border-box;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid black;
+}
+
+body {
+	margin: 0;
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	/* background: linear-gradient(to right, #f8b500, #fceabb, #f8b500, #fceabb); */
+}

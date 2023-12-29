@@ -93,8 +93,16 @@ export class SnakeController {
 	
 	private generateNewFoodPosition(): number[] {
 		// Generate a random position for the food
-		const newFoodX = Math.floor(Math.random() * 10);
-		const newFoodY = Math.floor(Math.random() * 10);
+		let newFoodX: number;
+		let newFoodY: number;
+		let foodIsOnSnake: boolean;
+
+		do {
+			newFoodX = Math.floor(Math.random() * 10);
+			newFoodY = Math.floor(Math.random() * 10);
+
+			foodIsOnSnake = this.gameState.snakePosition.some(([posX, posY]) => posX === newFoodX && posY === newFoodY);
+		} while (foodIsOnSnake);
 		return [newFoodX, newFoodY];
 	}
 
