@@ -5,8 +5,9 @@ export class SnakeController {
 	private logger = new Logger(SnakeController.name);
 
 	private gameState = {
-		snakePosition: [[0, 0], [0, 1], [0, 2]],	// Initial snake position
-		foodPosition: [2, 2]						// Initial food position
+		snakePosition: [[4, 4], [4, 5], [4, 6]],	// Initial snake position
+		foodPosition: [2, 2],						// Initial food position
+		gameStarted: false,
 	};
 
 	@Get('state')
@@ -20,9 +21,24 @@ export class SnakeController {
 		}
 	}
 
+	@Post('start')
+	startGame()
+	{
+		try {
+			this.gameState.gameStarted = true;
+			return this.gameState;
+		} catch (error) {
+			this.logger.error( `Error starting game: $(error.message)` );
+			throw new HttpException('Error starting game', HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	@Post('update')
 	updateGameState(@Body() updateData: any)
 	{
+		if (!updateData.direction) {
+			throw new HttpException('Direction not provided', HttpStatus.BAD_REQUEST);
+		}
 		try {
 			const newDirection = updateData.direction;
 
@@ -30,17 +46,15 @@ export class SnakeController {
 			const newHead =this.calculateNewHead(newDirection);
 			this.gameState.snakePosition.unshift(newHead);
 
-			if (this.checkCollision()) {
+			if (this.gameState.gameStarted && this.checkCollision()) {
 				this.gameState = this.resetGameState();
+				return {...this.gameState, gameOver: true} // game over signal
+			} else if (this.isFoodEaten()) {
+				this.gameState.foodPosition = this.generateNewFoodPosition();
 			} else {
-				if (this.isFoodEaten()) {
-					this.gameState.foodPosition = this.generateNewFoodPosition();
-				} else {
-					// remove the last element from the snake position
-					this.gameState.snakePosition.pop();
-				}
+				// remove the last element from the snake position
+				this.gameState.snakePosition.pop();
 			}
-			
 			return this.gameState;
 		} catch (error) {
 			this.logger.error( `Error updating game data state: $(error.message)` );
@@ -49,7 +63,6 @@ export class SnakeController {
 	}
 
 	private calculateNewHead(direction: string) {
-		// For simplicity, assume direction is on of 'UP', 'DOWN', 'LEFT', 'RIGHT'
 		const [headX, headY] = this.gameState.snakePosition[0];
 
 		switch (direction) {
@@ -108,8 +121,9 @@ export class SnakeController {
 
 	private resetGameState() {
 		return {
-			snakePosition: [[0, 0], [0, 1], [0, 2]],
-			foodPosition: [2, 2]
+			snakePosition: [[4, 4], [4, 5], [4, 6]],
+			foodPosition: [2, 2],
+			gameStarted: false,
 		};
 	}
 }

@@ -3,6 +3,11 @@ import axios from 'axios';
 import './App.css';
 
 const App = () => {
+
+	const [gameStarted, setGameStarted] = useState(false);
+	const [snakeDied, setSnakeDied] = useState(false);
+
+
 	const [gameState, setGameState] = useState({
 		snakePosition: [],
 		foodPosition: [],
@@ -29,12 +34,16 @@ const App = () => {
 		}
 		try {
 			const response = await axios.post('http://localhost:3001/snake/update', { direction: directionRef.current });
-			const { snakePosition, foodPosition } = response.data;
+			const { snakePosition, foodPosition, gameOver } = response.data;
 			setGameState(prevState => ({
 				...prevState,
 				snakePosition,
 				foodPosition
 			}));
+			if (gameOver) {
+				setSnakeDied(true);
+				setGameState(false);
+			}
 		} catch (error) {
 			console.log('Error updating game state:', error);
 		}
@@ -63,7 +72,7 @@ const App = () => {
 		};
 	}, [handleUpdateGameState]);
 
-	const handleKeyDown = useCallback((event) => {
+	const handleKeyDown = useCallback(async (event) => {
 		// map arrow key codes to directions
 		const keyToDirection = {
 			ArrowUp: 'UP',
@@ -90,8 +99,18 @@ const App = () => {
 			directionRef.current = newDirection;
 
 			directionBuffer.current.push(newDirection);
+
+			if (!gameStarted) {
+				try {
+					await axios.post('http://localhost:3001/snake/start');
+					setGameStarted(true);
+					setSnakeDied(false);
+				} catch (error) {
+					console.log('Error starting game:', error);
+				}
+			}
 		}
-	}, []);
+	}, [gameStarted]);
 
 	useEffect(() => {
 
@@ -123,10 +142,15 @@ const App = () => {
 
 	const renderGameBoard = () => {
 		const gameBoard = createGameBoard();
+		const isGameActive = gameStarted && !snakeDied;
+		const opacity = isGameActive ? 1 : 0.5;
+
 		// render the game board
 		return (
-			<div className="game-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-				<h1 style={{ fontFamily: 'monospace', fontSize: '2em', marginBottom: '1em' }}>Snake Game</h1>
+			<div className="game-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: opacity }}>
+				<div style={{ width: '500px', display: 'flex', justifyContent: 'center' }}>
+					<h1 style={{ fontFamily: 'monospace', fontSize: '2em', marginBottom: '1em', height: '1.2em' }}>{gameStarted ? 'Snake Game' : 'Press an arrow key to start'}</h1>
+				</div>
 				<div className="grid" style={{ display : 'inline-flex', flexDirection: 'column'}}>
 					{gameBoard.map((row, rowIndex) => (
 						<div key={rowIndex} className="grid-row">
