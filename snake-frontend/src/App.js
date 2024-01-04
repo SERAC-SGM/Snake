@@ -2,8 +2,15 @@ import React, {useState, useEffect, useCallback, useRef} from 'react';
 import axios from 'axios';
 import './App.css';
 
+// declaration of the functional component
 const App = () => {
 
+	/*
+	useState: react hook used for adding state to functional components
+		- useState returns an array with two elements:
+			1. The current state value
+			2. A function to update the state value
+	*/
 	const [gameStarted, setGameStarted] = useState(false);
 	const [snakeDied, setSnakeDied] = useState(false);
 
@@ -11,6 +18,7 @@ const App = () => {
 	const [gameState, setGameState] = useState({
 		snakePosition: [],
 		foodPosition: [],
+		gameStarted: false,
 	});
 	const [direction, setDirection] = useState('');
 	const directionRef = useRef(direction);
@@ -42,8 +50,15 @@ const App = () => {
 			}));
 			if (gameOver) {
 				setSnakeDied(true);
-				setGameState(false);
+				setGameStarted(false);
+				setGameState({
+					snakePosition: [],
+					foodPosition: [],
+					// gameStarted: false,
+				})
+				// setGameState(...gameState, false);
 			}
+			return ;
 		} catch (error) {
 			console.log('Error updating game state:', error);
 		}
@@ -113,7 +128,7 @@ const App = () => {
 	}, [gameStarted]);
 
 	useEffect(() => {
-
+		if (!gameState) return;
 		// add event listener for arrow keys controls
 		window.addEventListener('keydown', handleKeyDown);
 
@@ -149,11 +164,11 @@ const App = () => {
 		return (
 			<div className="game-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: opacity }}>
 				<div style={{ width: '500px', display: 'flex', justifyContent: 'center' }}>
-					<h1 style={{ fontFamily: 'monospace', fontSize: '2em', marginBottom: '1em', height: '1.2em' }}>{gameStarted ? 'Snake Game' : 'Press an arrow key to start'}</h1>
+					<h1 style={{ fontFamily: 'monospace', fontSize: '2em', marginBottom: '1em', height: '1.2em' }}>{gameStarted ? 'Snake Game' : snakeDied ? 'Press an arrow key to restart' : 'Press an arrow key to start'}</h1> {/* nested ternary operator */}
 				</div>
 				<div className="grid" style={{ display : 'inline-flex', flexDirection: 'column'}}>
 					{gameBoard.map((row, rowIndex) => (
-						<div key={rowIndex} className="grid-row">
+						<div key={rowIndex} className="grid-row"> {/* apparently not a good idea to use index as key but idk how to fix it */}
 							{row.map((cell, cellIndex) => {
 								let color;
 								if (cell === 'food') {
@@ -170,7 +185,7 @@ const App = () => {
 								}
 								return (
 									<div
-										key={`${rowIndex}-${cellIndex}`}
+										key={`${rowIndex}-${cellIndex}`} {/* same thing about index as key */}
 										className="grid-cell"
 										style={{
 										backgroundColor: color,
