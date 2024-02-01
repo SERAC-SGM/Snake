@@ -2,6 +2,13 @@ import React, {useState, useEffect, useCallback, useRef} from 'react';
 import axios from 'axios';
 import './App.css';
 
+const GameOverScreen = () => (
+	<div className="game-over"style={{ fontFamily: 'monospace', fontSize: '1.5em', marginTop: '0.5em', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'rgba(255, 255, 255, 0.8)', zIndex: 2 }}>
+		<h1>Game Over</h1>
+		<p>Press Enter to start a new game</p>
+	</div>
+);
+
 // declaration of the functional component
 const App = () => {
 
@@ -13,7 +20,6 @@ const App = () => {
 	*/
 	const [gameStarted, setGameStarted] = useState(false);
 	const [snakeDied, setSnakeDied] = useState(false);
-
 
 	const [gameState, setGameState] = useState({
 		snakePosition: [],
@@ -136,7 +142,7 @@ const App = () => {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
 		};
-	}, [handleKeyDown]);
+	}, [handleKeyDown, gameState]);
 
 	const createGameBoard = () => {
 		const boardSize = 10;
@@ -155,48 +161,53 @@ const App = () => {
 		return gameBoard;
 	}
 
+
 	const renderGameBoard = () => {
 		const gameBoard = createGameBoard();
 		const isGameActive = gameStarted && !snakeDied;
-		const opacity = isGameActive ? 1 : 0.5;
+		const opacity = isGameActive ? 1 : 0.25;
 
 		// render the game board
 		return (
-			<div className="game-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: opacity }}>
+			<div className="game-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 				<div style={{ width: '500px', display: 'flex', justifyContent: 'center' }}>
-					<h1 style={{ fontFamily: 'monospace', fontSize: '2em', marginBottom: '1em', height: '1.2em' }}>{gameStarted ? 'Snake Game' : snakeDied ? 'Press an arrow key to restart' : 'Press an arrow key to start'}</h1> {/* nested ternary operator */}
+					<h1 style={{ fontFamily: 'monospace', fontSize: '2em', marginBottom: '1em', height: '1.2em' }}>
+						{isGameActive ? 'Snake Game' : 'Press an arrow key to start'}
+					</h1>
 				</div>
-				<div className="grid" style={{ display : 'inline-flex', flexDirection: 'column'}}>
-					{gameBoard.map((row, rowIndex) => (
-						<div key={rowIndex} className="grid-row"> {/* apparently not a good idea to use index as key but idk how to fix it */}
-							{row.map((cell, cellIndex) => {
-								let color;
-								if (cell === 'food') {
-									color = 'green';
-								} else if (cell === 'head') {
-									color = 'red';
-								} else if (cell === 'body') {
-									const distanceFromHead = gameState.snakePosition.length - 1 - gameState.snakePosition.findIndex(([snakeX, snakeY]) => snakeX === cellIndex && snakeY === rowIndex);
-									const colorIntensity = Math.max(0, 100 + (distanceFromHead * 10));
-									color = `rgb(${colorIntensity}, 0, 0)`;
-								}
-								else {
-									color = 'white';
-								}
-								return (
-									<div
-										key={`${rowIndex}-${cellIndex}`} {/* same thing about index as key */}
-										className="grid-cell"
-										style={{
-										backgroundColor: color,
-									}}
-									></div>
-								);
-								})}
-						</div>
-					))}
-				</div>
-					<div className="score" style={{ fontFamily: 'monospace', fontSize: '1.5em', marginTop: '0.5em'}}>Score: {gameState.snakePosition.length - 1}</div>
+				{/* {isGameActive ? ( */}
+					<div className="grid" style={{ display : 'inline-flex', flexDirection: 'column', opacity: opacity}}>
+						{gameBoard.map((row, rowIndex) => (
+							<div key={rowIndex} className="grid-row"> {/* apparently not a good idea to use index as key but idk how to fix it */}
+								{row.map((cell, cellIndex) => {
+									let color;
+									if (cell === 'food') {
+										color = 'green';
+									} else if (cell === 'head') {
+										color = 'red';
+									} else if (cell === 'body') {
+										const distanceFromHead = gameState.snakePosition.length - 1 - gameState.snakePosition.findIndex(([snakeX, snakeY]) => snakeX === cellIndex && snakeY === rowIndex);
+										const colorIntensity = Math.max(0, 100 + (distanceFromHead * 10));
+										color = `rgb(${colorIntensity}, 0, 0)`;
+									}
+									else {
+										color = 'white';
+									}
+									return (
+										<div
+											key={`${rowIndex}-${cellIndex}`}
+											className="grid-cell"
+											style={{
+											backgroundColor: color,
+										}}
+										></div>
+									);
+									})}
+							</div>
+						))}
+					</div>
+				{snakeDied ? null : <GameOverScreen /> }
+				<div className="score" style={{ fontFamily: 'monospace', fontSize: '1.5em', marginTop: '0.5em', opacity: opacity}}>Score: {gameState.snakePosition.length - 1}</div>
 			</div>
 		);
 	};
